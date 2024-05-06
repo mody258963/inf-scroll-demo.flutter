@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:rxdart/rxdart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,76 +27,64 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late BehaviorSubject<List<int>> _dataSubject;
-  late ScrollController _scrollController;
-  final int _perPage = 10;
-  int _counter = 0;
+  final _scrollController = ScrollController();
+  final List<String> _counter =
+      List.generate(17, (index) => 'item ${index + 1}');
 
   @override
   void initState() {
     super.initState();
-    _dataSubject = BehaviorSubject<List<int>>();
-    _scrollController = ScrollController()..addListener(_scrollListener);
-    loadData();
-  }
-
-  @override
-  void dispose() {
-    _dataSubject.close();
-    _scrollController.dispose();
-    super.dispose();
+    _scrollController.addListener(_scrollListener);
+    
   }
 
   void loadData() {
-    // Simulating loading data asynchronously
-    Future.delayed(const Duration(seconds: 2), () {
-      final newData = List.generate(_perPage, (index) => _counter * _perPage + index + 1);
-      _dataSubject.add(newData);
-      _counter++; // Increment counter for pagination
+    setState(() {
+      _counter.addAll(['item t', 'item c', 'item q']);
     });
   }
 
   void _scrollListener() {
-    if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
-        !_scrollController.position.outOfRange) {
-      // Reached the end, load more data
-      loadData();
+    if (_scrollController.offset ==
+            _scrollController.position.maxScrollExtent 
+        ) {
+      Future.delayed(Duration(seconds: 1), () {
+        loadData();
+      });
     }
   }
+  //   void _scrollListener() {
+  //   if (_scrollController.offset >=
+  //           _scrollController.position.maxScrollExtent &&  // This means the user has scrolled to the bottom of the list and the position is not out of range (not overscrolling)
+  //       _scrollController.position.outOfRange) {
+  //     Future.delayed(Duration(seconds: 1), () {
+  //       loadData();
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Infinite Scroll Example'),
-      ),
-      body: StreamBuilder<List<int>>(
-        stream: _dataSubject.stream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final data = snapshot.data!;
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: data.length + 1, // +1 for loading indicator
-              itemBuilder: (context, index) {
-                if (index < data.length) {
-                  return ListTile(
-                    title: Text('Item ${data[index]}'),
-                  );
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              },
-            );
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        },
-      ),
-    );
+        appBar: AppBar(
+          title: const Text('Infinite Scroll Example'),
+        ),
+        body: ListView.builder(
+          controller: _scrollController,
+          itemCount: _counter.length + 1, // +1 for loading indicator
+          itemBuilder: (context, index) {
+            if (index < _counter.length) {
+              final item = _counter[index];
+              return ListTile(
+                title: Text(item),
+              );
+            } else {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 30),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+          },
+        ));
   }
 }
